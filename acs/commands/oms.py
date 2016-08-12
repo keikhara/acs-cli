@@ -10,6 +10,8 @@ your config file. Finally, run the `install` command to install OMS on
 each of your agents (please note that this command restarts the Docker
 Engine and thus any containers on it will be stopped).
 
+only supported for systemd Linux OS
+
 Usage:
   oms <command> [help] [options]
 
@@ -65,25 +67,21 @@ class Oms(Base):
         
         result = ""
 
-        cmd = "wget https://github.com/Microsoft/OMS-Agent-for-Linux/releases/download/v1.1.0-28/omsagent-1.1.0-28.universal.x64.sh\n"
-        # FIXME: do some error checking
-        result = self.executeOnAgent(cmd, ip)
-
-        cmd = "chmod +x ./omsagent-1.1.0-28.universal.x64.sh\n"
-        # FIXME: do some error checking
-        result = self.executeOnAgent(cmd, ip)
-
         workspace_id = self.config.get('OMS', "workspace_id")
         workspace_key = self.config.get('OMS', "workspace_primary_key")
-        cmd = "sudo ./omsagent-1.1.0-28.universal.x64.sh --upgrade -w " + workspace_id + " -s " + workspace_key + "\n"
-        # FIXME: do some error checking
+        cmd = "sudo docker run --privileged -d -v /var/run/docker.sock:/var/run/docker.sock -e WSID=" +workspace_id + " -e KEY=" + workspace_primary_key + " -h=`hostname` -p 127.0.0.1:25224:25224/udp -p 127.0.0.1:25225:25225 --name=\"omsagent\" --log-driver=none --restart=always microsoft/oms:Test"
+	# FIXME: do some error checking
         result = self.executeOnAgent(cmd, ip)
 
-        cmd = 'sudo sed -i -E "s/(DOCKER_OPTS=\\\")(.*)\\\"/\\1\\2 --log-driver=fluentd --log-opt fluentd-address=localhost:25225\\\"/g" /etc/default/docker'
-        # FIXME: do some error checking
+	cmd ="sudo systemctl enable docker.service"
+	cmd ="sudo cp -pr /etc/systemd/system/multi-user.target.wants/docker.service /etc/systemd/system"
+	cmd ="sudo sed -i -e '12 i\Environment=\"DOCKER_OPTS=--log-driver=fluentd --log-opt fluentd-address=localhost:25225\"' /etc/systemd/system/docker.service"
+	cmd ="sudo sed -e '/^ExecStart/ s/$/ $DOCKER_OPTS/' /etc/systemd/system/docker.service" 
+	# FIXME: do some error checking
         result = self.executeOnAgent(cmd, ip)
 
-        cmd = "sudo service docker restart\n"
+        cmd = "sudo systemctl daemon-reload"
+	cmd = "sudo systemctl restart docker.service"
         # FIXME: do some error checking
         result = self.executeOnAgent(cmd, ip)
 
