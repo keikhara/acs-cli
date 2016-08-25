@@ -75,8 +75,8 @@ class Oms(Base):
 
 	cmd ="sudo systemctl enable docker.service"
 	cmd ="sudo cp -pr /etc/systemd/system/multi-user.target.wants/docker.service /etc/systemd/system"
-	cmd ="sudo sed -i -e '12 i\Environment=\"DOCKER_OPTS=--log-driver=fluentd --log-opt fluentd-address=localhost:25225\"' /etc/systemd/system/docker.service"
-	cmd ="sudo sed -e '/^ExecStart/ s/$/ $DOCKER_OPTS/' /etc/systemd/system/docker.service" 
+	cmd ="sudo sed -i -e '5 i\Environment=\"DOCKER_OPTS=--log-driver=fluentd --log-opt fluentd-address=localhost:25225\"' /etc/systemd/system/docker.service.d/execstart.conf"
+	cmd ="sudo sed -i -e '/^ExecStart/ s/$/ $DOCKER_OPTS/' /etc/systemd/system/docker.service.d/execstart.conf" 
 	# FIXME: do some error checking
         result = self.executeOnAgent(cmd, ip)
 
